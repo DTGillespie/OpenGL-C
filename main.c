@@ -6,22 +6,44 @@
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
+int render(void);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 
-unsigned int VBO;
+unsigned int VBO;             
 unsigned int VAO;
 unsigned int EBO;
 
 unsigned int vertexShader;
-const char* vertexShaderSource =
+
+const char* vertexShaderSource = "#version 330 core\n"
+"layout (location = 0) in vec3 aPos;\n"
+"layout (location = 1) in vec3 aColor;\n"
+"out vec3 color;\n"
+"void main() {\n"
+"gl_position = vec4(aPos , 1.0);\n"
+"color = aColor;\n"
+"}\0";
+
+/*const char* vertexShaderSource =
 "#version 330 core\n"
 "layout (location = 0) in vec3 aPos;\n"
 "void main() {\n"
 "gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
 "}\0";
+*/
 
 unsigned int fragmentShader;
+
+const char* fragmentShaderSource =
+"#version 330 core\n"
+"out vec4 fragColor;\n"
+"in vec3 color;\n"
+"void main() {\n"
+"fragColor = vec4(color, 1.0);\n"
+"}\0";
+
+/*
 const char* fragmentShaderSource =
 "#version 330 core\n"
 "out vec4 FragColor;\n"
@@ -29,16 +51,16 @@ const char* fragmentShaderSource =
 "void main(){\n"
 "FragColor = color;"
 "}\0";
+*/
 
 unsigned int shaderProgram;
 
 const float VERTICES[] = {
 
-	// First triangle
-	0.5f,  0.5f, 0.0f, // top right
-	0.5f, -0.5f, 0.0f, // bottom right
-   -0.5f, -0.5f, 0.0f, // bottom left
-   -0.5f,  0.5f, 0.0f  // top left
+	// Positions       Colors
+	0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, // bottom right   
+   -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, // bottom left		
+    0.0f,  0.5f, 0.0f, 0.0f, 0.0f, 1.0f  // top				
 };
 
 const unsigned int INDICES[] = {
@@ -137,8 +159,12 @@ int main() {
 	glDeleteShader(fragmentShader);
 
 	// Vertex attributes
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	//glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0); // Original
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);   // Position attribute
 	glEnableVertexAttribArray(0);
+
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float))); // Color attribute
+	glEnableVertexAttribArray(1);
 
 	// Wireframe rendering
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // GL_FILL 
@@ -148,31 +174,40 @@ int main() {
 	glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &nrAttributes);
 	printf("Supported vertex attributes: %d", nrAttributes);
 
+	int frame = 0;
+
 	while (!glfwWindowShouldClose(window)) {
 
 		processInput(window);
 
-		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
-
-		glUseProgram(shaderProgram);
-
-		float timeValue = glfwGetTime();
-		float greenValue = sin(timeValue) / 2.0f + 0.5f;
-		int vertexColorLocation = glGetUniformLocation(shaderProgram, "color");
-		glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
-
-		glBindVertexArray(VAO);
-
-		//glDrawArrays(GL_TRIANGLES, 0, 3); // Rendering VBO/VAO
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // Rendering EBO
+		render();
 
 		glfwPollEvents();
+
 		glfwSwapBuffers(window);
 	}
 
 	glfwTerminate();
 	return 0;
+}
+
+int render(void) {
+
+	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	glUseProgram(shaderProgram);
+
+	float timeValue = glfwGetTime();
+	float greenValue = sin(timeValue) / 2.0f + 0.5f;
+	int vertexColorLocation = glGetUniformLocation(shaderProgram, "color");
+	glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
+
+	glBindVertexArray(VAO);
+														 
+	//glDrawArrays(GL_TRIANGLES, 0, 3);					 // Rendering VBO/VAO
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // Rendering EBO
+
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {

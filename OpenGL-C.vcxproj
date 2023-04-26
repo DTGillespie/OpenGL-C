@@ -71,9 +71,9 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\github\OpenGL-C\include;C:\Users\dgillespie.CFSDOMAIN\Desktop\glfw-3.3.8\include;$(IncludePath)</IncludePath>
-    <ExternalIncludePath>C:\Users\dgillespie.CFSDOMAIN\Desktop\glfw-3.3.8\include;$(ExternalIncludePath)</ExternalIncludePath>
-    <LibraryPath>C:\Users\dgillespie.CFSDOMAIN\Desktop\glfw-3.3.8\build\src\Debug;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\repos\OpenGL-C\include;$(IncludePath)</IncludePath>
+    <ExternalIncludePath>$(ExternalIncludePath)</ExternalIncludePath>
+    <LibraryPath>D:\repos\OpenGL-C\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
