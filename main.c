@@ -2,6 +2,7 @@
 #pragma comment(lib, "opengl32.lib")
 
 #include <stdio.h>
+#include <math.h>
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
@@ -24,8 +25,9 @@ unsigned int fragmentShader;
 const char* fragmentShaderSource =
 "#version 330 core\n"
 "out vec4 FragColor;\n"
+"uniform vec4 color;\n"
 "void main(){\n"
-"FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);"
+"FragColor = color;"
 "}\0";
 
 unsigned int shaderProgram;
@@ -68,7 +70,7 @@ int main() {
 		return -1;
 	}
 
-	printf("Successfully Initialized OpenGL %d.%d\n", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
+	printf("Initialized OpenGL %d.%d\n", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
 
 	glViewport(0, 0, 800, 600);
 
@@ -128,7 +130,7 @@ int main() {
 		printf("ERROR::SHADER::PROGRAM::LINKING_FAILED\n", infoLog);
 	}
 
-	glUseProgram(shaderProgram);
+	//glUseProgram(shaderProgram); Can be used within the render loop
 
 	// Delete unused objects
 	glDeleteShader(vertexShader);
@@ -139,7 +141,12 @@ int main() {
 	glEnableVertexAttribArray(0);
 
 	// Wireframe rendering
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // GL_FILL 
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // GL_FILL 
+
+	// Maximum vertex attributes (vertex shader)
+	int nrAttributes;
+	glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &nrAttributes);
+	printf("Supported vertex attributes: %d", nrAttributes);
 
 	while (!glfwWindowShouldClose(window)) {
 
@@ -148,8 +155,16 @@ int main() {
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		//glDrawArrays(GL_TRIANGLES, 0, 3); // Rendering VBO/VAO
+		glUseProgram(shaderProgram);
 
+		float timeValue = glfwGetTime();
+		float greenValue = sin(timeValue) / 2.0f + 0.5f;
+		int vertexColorLocation = glGetUniformLocation(shaderProgram, "color");
+		glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
+
+		glBindVertexArray(VAO);
+
+		//glDrawArrays(GL_TRIANGLES, 0, 3); // Rendering VBO/VAO
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // Rendering EBO
 
 		glfwPollEvents();
