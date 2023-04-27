@@ -21,7 +21,7 @@ const char* vertexShaderSource = "#version 330 core\n"
 "layout (location = 1) in vec3 aColor;\n"
 "out vec3 color;\n"
 "void main() {\n"
-"gl_position = vec4(aPos , 1.0);\n"
+"gl_Position = vec4(aPos , 1.0);\n"
 "color = aColor;\n"
 "}\0";
 
@@ -70,6 +70,7 @@ const unsigned int INDICES[] = {
 
 int main() {
 
+	/* Initialization */
 	glfwInit();
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -98,7 +99,12 @@ int main() {
 
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-	// Buffers
+	// Maximum vertex attributes (vertex shader)
+	int nrAttributes;
+	glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &nrAttributes);
+	printf("Supported vertex attributes: %d\n", nrAttributes);
+
+	/* Buffer & Object initialization */
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
 	glGenBuffers(1, &EBO);
@@ -114,6 +120,8 @@ int main() {
 	int success;
 	char infoLog[512];
 
+	/* Shader creation, compilation, and linking  */
+
 	// Vertex shader
 	vertexShader = glCreateShader(GL_VERTEX_SHADER);
 
@@ -123,7 +131,7 @@ int main() {
 	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
 	if (!success) {
 		glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-		printf("ERROR::SHADER::VERTEX::COMPILATION_FAILED\n", infoLog);
+		printf("ERROR::SHADER::VERTEX::COMPILATION_FAILED\n%s", infoLog);
 	}
 
 	// Fragment shader
@@ -135,7 +143,7 @@ int main() {
 	glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
 	if (!success) {
 		glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-		printf("ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n", infoLog);
+		printf("ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n%s", infoLog);
 	}
 
 	// Shader program
@@ -149,7 +157,7 @@ int main() {
 	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
 	if (!success) {
 		glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-		printf("ERROR::SHADER::PROGRAM::LINKING_FAILED\n", infoLog);
+		printf("ERROR::SHADER::PROGRAM::LINKING_FAILED\n%s", infoLog);
 	}
 
 	//glUseProgram(shaderProgram); Can be used within the render loop
@@ -168,11 +176,6 @@ int main() {
 
 	// Wireframe rendering
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // GL_FILL 
-
-	// Maximum vertex attributes (vertex shader)
-	int nrAttributes;
-	glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &nrAttributes);
-	printf("Supported vertex attributes: %d", nrAttributes);
 
 	int frame = 0;
 
@@ -193,6 +196,7 @@ int main() {
 
 int render(void) {
 
+	// Clear screen
 	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
@@ -203,11 +207,10 @@ int render(void) {
 	int vertexColorLocation = glGetUniformLocation(shaderProgram, "color");
 	glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
 
-	glBindVertexArray(VAO);
-														 
-	//glDrawArrays(GL_TRIANGLES, 0, 3);					 // Rendering VBO/VAO
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // Rendering EBO
+	//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // Rendering EBO
 
+	glBindVertexArray(VAO);
+	glDrawArrays(GL_TRIANGLES, 0, 3);					   // Rendering VBO/VAO
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
