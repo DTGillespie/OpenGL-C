@@ -6,9 +6,9 @@
 #include <stdio.h>
 
 struct Shader {
-	unsigned int id;
-	char *vertexSrc;
-	char *fragmentSrc;
+	//unsigned int id;
+	char vertexSrc[1024];
+	char fragmentSrc[1024];
 };
 
 void shader_CreateFromPath(char *vertexPath, char *fragmentPath);

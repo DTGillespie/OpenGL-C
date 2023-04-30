@@ -274,5 +274,5 @@ void dev_initializeShadersProc(void) {
 			   fragment_shaderPath_suffix,
 		sizeof(fragment_shaderPath_suffix));
 
-	shader_CreateFromPath(vertex_shaderPath, fragment_shaderPath);
+	shader_CreateFromPath(&vertex_shaderPath, &fragment_shaderPath);
 }
