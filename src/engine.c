@@ -13,23 +13,27 @@
 #include <GLFW/glfw3.h>
 #include <engine.h>
 
-static GLFWwindow* initialize_OpenGL				  (int version_major, int version_minor);
-static void        buffer_vertexData				  (float vertexData[VERTEX_ARRAY_SIZE], unsigned int indexData[INDEX_ARRAY_SIZE]);
-static void		   render							  (Shader dev_Shader, GLFWwindow windowArg);
-void		       framebuffer_size_callback		  (GLFWwindow* window, int width, int height);
-static void        poll_input						  (void);
-static void	       shader_bufferSource_Path			  (char* vertexPath, char* fragmentPath);
-static Shader*     shader_heapAllocation_SourceBuffer (void);
-static int         shader_deleteShader_Heap			  (void);
+// ENGINE_RUNTIME_GL
+static GLFWwindow* initialize			 (int version_major, int version_minor);
+static void        bufferRenderObject	 (RenderObject *renderObject);
+static void		   render			     (RenderFuncPtr renderFuncPtr, GLFWwindow windowArg);
+static void		   renderProc_DrawArrays (RenderObject *renderObject);
+
+// RUNTIME_SHADERS_GL
+static void	   shader_bufferSource_Path			  (char *vertexPath, char *fragmentPath);
+static Shader* shader_heapAllocation_SourceBuffer (void);
+static int     shader_deleteShader_Heap			  (void);
+
+// Internal
+void		       framebuffer_size_callback (GLFWwindow* window, int width, int height);
+static void        poll_input				 (void);
 
 static ShaderSourceBuffer SHADER_SRC_BUFFER = { .buffered = 0, 0 };
-static RenderBuffer		  RENDER_BUFFER = { 0 };
 
-// Development variables
 Shader dev_Shader = { 0 };
 GLFWwindow* window;
 
-GLFWwindow* initialize_OpenGL(int version_major, int version_minor) {
+GLFWwindow* initialize(int version_major, int version_minor) {
 	
 	glfwInit();
 
@@ -64,41 +68,27 @@ GLFWwindow* initialize_OpenGL(int version_major, int version_minor) {
 	glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &nrAttributes);
 	printf("Supported vertex attributes: %d\n", nrAttributes);
 
-	// Wireframe rendering
-	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // GL_FILL 
-
 	return window;
 }
 
-static void buffer_vertexData(float vertexData[VERTEX_ARRAY_SIZE], unsigned int indexData[INDEX_ARRAY_SIZE]) {
+static void bufferRenderObject(RenderObject *renderObject) {
 
-	glGenVertexArrays	(1, &RENDER_BUFFER.VAO);
+	glGenVertexArrays		  (1, &renderObject->VAO);
+	glGenBuffers			  (1, &renderObject->VBO);
+	glBindVertexArray		  (renderObject->VAO);
+	glBindBuffer			  (GL_ARRAY_BUFFER, renderObject->VBO);
+	glBufferData			  (GL_ARRAY_BUFFER, sizeof(renderObject->mesh), renderObject->mesh, GL_STATIC_DRAW);
+	glVertexAttribPointer	  (0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray (0);
 
-	glGenBuffers		(1, &RENDER_BUFFER.VBO);
-	glGenBuffers		(1, &RENDER_BUFFER.EBO);
-
-	glBindVertexArray	(RENDER_BUFFER.VAO);
-
-	glBindBuffer		(GL_ARRAY_BUFFER, RENDER_BUFFER.VBO);
-	glBufferData		(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RENDER_BUFFER.EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indexData), indexData, GL_STATIC_DRAW);
-
-	/* Vertex attributes	NOT SURE WHERE TO PUT THIS YET */
-
-	//glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0); // Original
-
-	/* Rainbow triangle example using vertex attributes */
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);   // Position attribute
-	glEnableVertexAttribArray(0);
-
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float))); // Color attribute
-	glEnableVertexAttribArray(1);
-
+	//glUseProgram(renderObject->shader->gls_program_id);
 }
 
-static void render(Shader dev_Shader, GLFWwindow *windowArg) {
+static void render(
+	void		(*renderFuncPtr)(RenderObject*), 
+	RenderObject *renderObject, 
+	GLFWwindow	 *windowArg
+) {
 
 	while (!glfwWindowShouldClose(windowArg)) {
 
@@ -107,28 +97,24 @@ static void render(Shader dev_Shader, GLFWwindow *windowArg) {
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		glUseProgram(dev_Shader.gls_program_id);
-
-		/* Code for green triangle example */
-		//float timeValue = glfwGetTime();
-		//float greenValue = sin(timeValue) / 2.0f + 0.5f;
-		//int vertexColorLocation = glGetUniformLocation(shaderProgram, "color");
-		//glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
-
-		glBindVertexArray(RENDER_BUFFER.VAO); // Should this go in the buffer function?
-
-		glDrawArrays(GL_TRIANGLES, 0, 3);					   // Rendering VBO/VAO
-		//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // Rendering EBO
-
+		renderFuncPtr;
 
 		glfwPollEvents();
-
 		glfwSwapBuffers(windowArg);
 	}
 
 	glfwTerminate();
+}
 
-	//return 0;
+static void renderProc_DrawArrays(RenderObject* renderObject) {
+
+	// Wireframe rendering
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // GL_FILL 
+
+	glUseProgram(renderObject->shader->gls_program_id);
+
+	glDrawArrays(GL_TRIANGLES, 0, 3);					   // Rendering VBO/VAO
+	//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // Rendering EBO
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
@@ -172,7 +158,7 @@ static void shader_bufferSource_Path(char* vertexPath, char* fragmentPath) {
 	SHADER_SRC_BUFFER.buffered = 1;
 }
 
-static Shader* shader_heapAllocation_SourceBuffer(void) {
+Shader* shader_heapAllocation_SourceBuffer(void) {
 
 	if (!SHADER_SRC_BUFFER.buffered) {
 		printf("ERROR::shader_heapAllocationFromSource()::SHADER_SOURCE_NOT_BUFFERED\n");
@@ -196,13 +182,9 @@ static Shader* shader_heapAllocation_SourceBuffer(void) {
 	// Debugging shader
 	const char* debug_vertex_shader =
 		"#version 330 core\n"
-		"layout(location = 0) in vec3 aPos; \n"
-		"layout(location = 1) in vec3 aColor; \n"
-		"out vec3 outColor; \n"
-		"void main() {"
-		"\n"
-		"gl_Position = vec4(aPos, 1.0); \n"
-		"outColor = aColor; \n"
+		"layout (location = 0) in vec3 aPos;\n"
+		"void main() {\n"
+		"	gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
 		"}\0";
 
 	char* formatted_vertex_src = strtok(hShader_ptr->vertex_src, "");
@@ -232,11 +214,9 @@ static Shader* shader_heapAllocation_SourceBuffer(void) {
 	// Debugging shader
 	const char* debug_fragment_shader =
 		"#version 330 core\n"
-		"in vec3 color; \n"
-		"out vec4 fragColor; \n"
-		"void main() {"
-		"\n"
-		"fragColor = vec4(color, 1.0); \n"
+		"out vec4 FragColor;\n"
+		"void main() {\n"
+		"FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
 		"}\0";
 
 	char* formatted_fragment_src = strtok(hShader_ptr->fragment_src, "");
@@ -283,14 +263,7 @@ static Shader* shader_heapAllocation_SourceBuffer(void) {
 		return NULL;
 	}
 
-	glUseProgram(dev_Shader.gls_program_id);
-
 	SHADER_SRC_BUFFER.buffered = 0;
-
-	/* Delete unused objects
-	glDeleteShader(vertexShader);
-	glDeleteShader(fragmentShader);
-	*/
 
 	return hShader_ptr;
 }
@@ -300,13 +273,14 @@ static int shader_deleteShader_Heap(void) {
 	return 1;
 }
 
-_ENGINE_RUNTIME  const ENGINE_RUNTIME = {
-	initialize_OpenGL, 
-	buffer_vertexData,
-	render 
+_ENGINE_RUNTIME_GL const ENGINE_RUNTIME_GL = {
+	initialize, 
+	bufferRenderObject,
+	render,
+	renderProc_DrawArrays,
 };
 
-_RUNTIME_SHADERS const RUNTIME_SHADERS = { 
+_RUNTIME_SHADERS_GL const RUNTIME_SHADERS_GL = { 
 	shader_heapAllocation_SourceBuffer,
 	shader_bufferSource_Path,
 };

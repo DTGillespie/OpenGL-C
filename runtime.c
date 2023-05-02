@@ -20,38 +20,31 @@ int main() {
 
 	/* Initialization */
 
-	window = ENGINE_RUNTIME.initialize_OpenGL(3, 3);
+	window = ENGINE_RUNTIME_GL.initialize(3, 3);
 
 	_getcwd(cwd, CWD_BUFFER_SIZE);
-	 
-	dev_bufferDebugShaderSource();
 
-	Shader *testShader = RUNTIME_SHADERS.heapAllocation_SourceBuffer();
-	/*
+	dev_bufferDebugShaderSource();
 	RenderObject debugTriangle = {
 
 		.mesh =
-			// Position      | Color
-			0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,
-		   -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
-			0.0f,  0.5f, 0.0f, 0.0f, 0.0f, 1.0f,
+			// Position
+			-0.5f, -0.5f, 0.0f,
+			 0.5f, -0.5f, 0.0f,
+			 0.0f,  0.5f, 0.0f,
 
 		.indices =
-			0, 1, 3,
-			1, 2, 3,
+			 0, 1, 3,
+		   //1, 2, 3,
 
-		.shader = RUNTIME_SHADERS.heapAllocation_SourceBuffer(),
-				
+		.shader = RUNTIME_SHADERS_GL.heapAllocation_SourceBuffer(),
+
+		.renderFuncPtr = ENGINE_RUNTIME_GL.renderProc_DrawArrays(debugTriangle.shader),
 	}; 
-	*/
 
-	//ENGINE_RUNTIME.buffer_vertexData(debugTriangle.mesh, debugTriangle.indices);
+	ENGINE_RUNTIME_GL.bufferRenderObject(&debugTriangle);
 
-	printf("Debug");
-
-	//ENGINE_RUNTIME.render(*debugTriangle.shader, window);
-
-	printf("Debug");
+	ENGINE_RUNTIME_GL.render(&debugTriangle.shader, window);
 }
 
 void dev_bufferDebugShaderSource(void) {
@@ -76,5 +69,5 @@ void dev_bufferDebugShaderSource(void) {
 			   fragment_shaderPath_suffix,
 		sizeof(fragment_shaderPath_suffix));
 
-	RUNTIME_SHADERS.bufferSource_Path(&vertex_shaderPath, &fragment_shaderPath);
+	RUNTIME_SHADERS_GL.bufferSource_Path(&vertex_shaderPath, &fragment_shaderPath);
 }
