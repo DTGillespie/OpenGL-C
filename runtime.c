@@ -40,7 +40,7 @@ int main() {
 		.shader = SHADERS_GL.heapAllocation_SourceBuffer(),
 
 		.renderFuncPtr = ENGINE_RUNTIME_GL.renderProc_DrawElements,
-	}; 
+	};
 
 	ENGINE_RUNTIME_GL.bufferRenderObject(&debugTriangle);
 

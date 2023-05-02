@@ -14,9 +14,9 @@
 #include <engine.h>
 
 // ENGINE_RUNTIME_GL
-static GLFWwindow* initialize			 (int version_major, int version_minor);
-static void        bufferRenderObject	 (RenderObject *renderObject);
-static void		   render			     (RenderFuncPtr renderFuncPtr, GLFWwindow windowArg);
+static GLFWwindow* initialize		  (int version_major, int version_minor);
+static void        bufferRenderObject (RenderObject *renderObject);
+static void		   render			  (RenderFuncPtr renderFuncPtr, GLFWwindow windowArg);
 
 // RUNTIME_SHADERS_GL
 static void	   shader_bufferSource_Path			  (char *vertexPath, char *fragmentPath);
@@ -126,7 +126,7 @@ static void glRenderProc_DrawArrays(Shader *shader) {
 
 	glUseProgram(shader->gls_program_id);
 
-	glDrawArrays(GL_TRIANGLES, 0, 3);					   // Rendering VBO/VAO
+	glDrawArrays(GL_TRIANGLES, 0, 3);					 // Rendering VBO/VAO
 }
 
 static void glRenderProc_DrawElements(Shader* shader) {
