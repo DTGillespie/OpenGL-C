@@ -18,15 +18,15 @@
     <ClCompile Include="src\gl.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="main.c">
+    <ClCompile Include="runtime.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\shader.c">
+    <ClCompile Include="src\engine.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\shader.h">
+    <ClInclude Include="src\engine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
