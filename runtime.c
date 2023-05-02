@@ -28,18 +28,18 @@ int main() {
 	RenderObject debugTriangle = {
 
 		.mesh =
-			// Position
-			-0.5f, -0.5f, 0.0f,
+			 0.5f,  0.5f, 0.0f,
 			 0.5f, -0.5f, 0.0f,
-			 0.0f,  0.5f, 0.0f,
+			-0.5f, -0.5f, 0.0f,
+			-0.5f,  0.5f, 0.0f,
 
 		.indices =
 			 0, 1, 3,
-		   //1, 2, 3,
+		     1, 2, 3,
 
-		.shader = RUNTIME_SHADERS_GL.heapAllocation_SourceBuffer(),
+		.shader = SHADERS_GL.heapAllocation_SourceBuffer(),
 
-		.renderFuncPtr = ENGINE_RUNTIME_GL.renderProc_DrawArrays,
+		.renderFuncPtr = ENGINE_RUNTIME_GL.renderProc_DrawElements,
 	}; 
 
 	ENGINE_RUNTIME_GL.bufferRenderObject(&debugTriangle);
@@ -69,5 +69,5 @@ void dev_bufferDebugShaderSource(void) {
 			   fragment_shaderPath_suffix,
 		sizeof(fragment_shaderPath_suffix));
 
-	RUNTIME_SHADERS_GL.bufferSource_Path(&vertex_shaderPath, &fragment_shaderPath);
+	SHADERS_GL.bufferSource_Path(&vertex_shaderPath, &fragment_shaderPath);
 }

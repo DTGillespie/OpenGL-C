@@ -4,8 +4,8 @@
 
 #define SHADER_SRC_BUFFER_SIZE 1024
 
-#define VERTEX_ARRAY_SIZE 18
-#define INDEX_ARRAY_SIZE  6
+#define VERTEX_ARRAY_SIZE 512
+#define INDEX_ARRAY_SIZE  512
 
 typedef struct {
 	unsigned int gls_program_id;
@@ -45,16 +45,17 @@ typedef struct {
 } RenderBuffer;
 
 typedef struct {
-	GLFWwindow* (* const initialize)		    (void);
-	void		(* const bufferRenderObject)    (RenderObject *renderObject);
-	void		(* const render)		        (RenderFuncPtr renderFuncPtr, GLFWwindow* windowArg);
-	void		(* const renderProc_DrawArrays)(Shader* shader);
+	GLFWwindow* (* const initialize)		      (void);
+	void		(* const bufferRenderObject)      (RenderObject *renderObject);
+	void		(* const render)		          (RenderFuncPtr renderFuncPtr, GLFWwindow* windowArg);
+	void		(* const renderProc_DrawArrays)	  (Shader* shader);
+	void		(* const renderProc_DrawElements) (Shader* shader);
 } _ENGINE_RUNTIME_GL;
 
 typedef struct {
 	Shader*  (* const heapAllocation_SourceBuffer) (void);
 	void	 (* const bufferSource_Path)	       (char* vertexPath, char* fragmentPath);
-} _RUNTIME_SHADERS_GL;
+} _SHADERS_GL;
 
-extern _ENGINE_RUNTIME_GL  const ENGINE_RUNTIME_GL;
-extern _RUNTIME_SHADERS_GL const RUNTIME_SHADERS_GL;
+extern _ENGINE_RUNTIME_GL const ENGINE_RUNTIME_GL;
+extern _SHADERS_GL		  const SHADERS_GL;

@@ -24,14 +24,17 @@ static Shader* shader_heapAllocation_SourceBuffer (void);
 static int     shader_deleteShader_Heap			  (void);
 
 // Internal
-void		       framebuffer_size_callback (GLFWwindow* window, int width, int height);
-static void        poll_input				 (void);
+void		framebuffer_size_callback (GLFWwindow* window, int width, int height);
+static void poll_input				  (void);
 
 // Misc.
-static void glRenderProc_DrawArrays(Shader* shader);
+static void glRenderProc_DrawArrays   (Shader* shader);
+static void glRenderProc_DrawElements (Shader* shader);
 
 static ShaderSourceBuffer SHADER_SRC_BUFFER = { .buffered = 0, 0 };
 
+
+// Dev
 Shader dev_Shader = { 0 };
 GLFWwindow* window;
 
@@ -75,11 +78,19 @@ GLFWwindow* initialize(int version_major, int version_minor) {
 
 static void bufferRenderObject(RenderObject *renderObject) {
 
+
 	glGenVertexArrays		  (1, &renderObject->VAO);
-	glGenBuffers			  (1, &renderObject->VBO);
 	glBindVertexArray		  (renderObject->VAO);
+
+	glGenBuffers			  (1, &renderObject->VBO);
 	glBindBuffer			  (GL_ARRAY_BUFFER, renderObject->VBO);
 	glBufferData			  (GL_ARRAY_BUFFER, sizeof(renderObject->mesh), renderObject->mesh, GL_STATIC_DRAW);
+
+
+	glGenBuffers			  (1, &renderObject->EBO);
+	glBindBuffer			  (GL_ELEMENT_ARRAY_BUFFER, renderObject->EBO);
+	glBufferData			  (GL_ELEMENT_ARRAY_BUFFER, sizeof(renderObject->indices), renderObject->indices, GL_STATIC_DRAW);
+
 	glVertexAttribPointer	  (0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray (0);
 
@@ -116,7 +127,16 @@ static void glRenderProc_DrawArrays(Shader *shader) {
 	glUseProgram(shader->gls_program_id);
 
 	glDrawArrays(GL_TRIANGLES, 0, 3);					   // Rendering VBO/VAO
-	//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // Rendering EBO
+}
+
+static void glRenderProc_DrawElements(Shader* shader) {
+
+	// Wireframe rendering
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // GL_FILL 
+
+	glUseProgram(shader->gls_program_id);
+
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // Rendering EBO
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
@@ -280,9 +300,10 @@ _ENGINE_RUNTIME_GL const ENGINE_RUNTIME_GL = {
 	bufferRenderObject,
 	render,
 	glRenderProc_DrawArrays,
+	glRenderProc_DrawElements,
 };
 
-_RUNTIME_SHADERS_GL const RUNTIME_SHADERS_GL = { 
+_SHADERS_GL const SHADERS_GL = { 
 	shader_heapAllocation_SourceBuffer,
 	shader_bufferSource_Path,
 };
