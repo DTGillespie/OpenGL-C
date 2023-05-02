@@ -17,7 +17,6 @@
 static GLFWwindow* initialize			 (int version_major, int version_minor);
 static void        bufferRenderObject	 (RenderObject *renderObject);
 static void		   render			     (RenderFuncPtr renderFuncPtr, GLFWwindow windowArg);
-static void		   renderProc_DrawArrays (RenderObject *renderObject);
 
 // RUNTIME_SHADERS_GL
 static void	   shader_bufferSource_Path			  (char *vertexPath, char *fragmentPath);
@@ -27,6 +26,9 @@ static int     shader_deleteShader_Heap			  (void);
 // Internal
 void		       framebuffer_size_callback (GLFWwindow* window, int width, int height);
 static void        poll_input				 (void);
+
+// Misc.
+static void glRenderProc_DrawArrays(Shader* shader);
 
 static ShaderSourceBuffer SHADER_SRC_BUFFER = { .buffered = 0, 0 };
 
@@ -85,7 +87,7 @@ static void bufferRenderObject(RenderObject *renderObject) {
 }
 
 static void render(
-	void		(*renderFuncPtr)(RenderObject*), 
+	//void		(*renderFuncPtr)(RenderObject*), 
 	RenderObject *renderObject, 
 	GLFWwindow	 *windowArg
 ) {
@@ -97,7 +99,7 @@ static void render(
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		renderFuncPtr;
+		renderObject->renderFuncPtr(renderObject->shader);
 
 		glfwPollEvents();
 		glfwSwapBuffers(windowArg);
@@ -106,12 +108,12 @@ static void render(
 	glfwTerminate();
 }
 
-static void renderProc_DrawArrays(RenderObject* renderObject) {
+static void glRenderProc_DrawArrays(Shader *shader) {
 
 	// Wireframe rendering
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // GL_FILL 
 
-	glUseProgram(renderObject->shader->gls_program_id);
+	glUseProgram(shader->gls_program_id);
 
 	glDrawArrays(GL_TRIANGLES, 0, 3);					   // Rendering VBO/VAO
 	//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // Rendering EBO
@@ -277,7 +279,7 @@ _ENGINE_RUNTIME_GL const ENGINE_RUNTIME_GL = {
 	initialize, 
 	bufferRenderObject,
 	render,
-	renderProc_DrawArrays,
+	glRenderProc_DrawArrays,
 };
 
 _RUNTIME_SHADERS_GL const RUNTIME_SHADERS_GL = { 

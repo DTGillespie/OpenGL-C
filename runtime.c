@@ -39,12 +39,12 @@ int main() {
 
 		.shader = RUNTIME_SHADERS_GL.heapAllocation_SourceBuffer(),
 
-		.renderFuncPtr = ENGINE_RUNTIME_GL.renderProc_DrawArrays(debugTriangle.shader),
+		.renderFuncPtr = ENGINE_RUNTIME_GL.renderProc_DrawArrays,
 	}; 
 
 	ENGINE_RUNTIME_GL.bufferRenderObject(&debugTriangle);
 
-	ENGINE_RUNTIME_GL.render(&debugTriangle.shader, window);
+	ENGINE_RUNTIME_GL.render(&debugTriangle, window);
 }
 
 void dev_bufferDebugShaderSource(void) {

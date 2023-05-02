@@ -7,8 +7,6 @@
 #define VERTEX_ARRAY_SIZE 18
 #define INDEX_ARRAY_SIZE  6
 
-typedef void (*RenderFuncPtr)(RenderObject* renderObject);
-
 typedef struct {
 	unsigned int gls_program_id;
 	unsigned int vertex_id;
@@ -16,6 +14,8 @@ typedef struct {
 	char vertex_src	  [SHADER_SRC_BUFFER_SIZE];
 	char fragment_src [SHADER_SRC_BUFFER_SIZE];
 } Shader;
+
+typedef void (*RenderFuncPtr)(Shader*);
 
 typedef struct {
 
@@ -48,7 +48,7 @@ typedef struct {
 	GLFWwindow* (* const initialize)		    (void);
 	void		(* const bufferRenderObject)    (RenderObject *renderObject);
 	void		(* const render)		        (RenderFuncPtr renderFuncPtr, GLFWwindow* windowArg);
-	void	    (* const renderProc_DrawArrays) (RenderObject* renderObject);
+	void		(* const renderProc_DrawArrays)(Shader* shader);
 } _ENGINE_RUNTIME_GL;
 
 typedef struct {
