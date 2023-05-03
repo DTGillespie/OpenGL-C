@@ -13,26 +13,35 @@
 #include <GLFW/glfw3.h>
 #include <engine.h>
 
-// ENGINE_RUNTIME_GL
+// Prototypes: ENGINE_RUNTIME_GL
 static GLFWwindow* initialize		  (int version_major, int version_minor);
 static void        bufferRenderObject (RenderObject *renderObject);
 static void		   render			  (RenderFuncPtr renderFuncPtr, GLFWwindow windowArg);
 
-// RUNTIME_SHADERS_GL
+// Prototypes: RUNTIME_SHADERS_GL
 static void	   shader_bufferSource_Path			  (char *vertexPath, char *fragmentPath);
 static Shader* shader_heapAllocation_SourceBuffer (void);
 static int     shader_deleteShader_Heap			  (void);
 
-// Internal
+// Prototypes: Internal
 void		framebuffer_size_callback (GLFWwindow* window, int width, int height);
 static void poll_input				  (void);
 
-// Misc.
+// Prototypes: Misc.
 static void glRenderProc_DrawArrays   (Shader* shader);
 static void glRenderProc_DrawElements (Shader* shader);
 
 static ShaderSourceBuffer SHADER_SRC_BUFFER = { .buffered = 0, 0 };
 
+// Prototypes: Memory managment]
+static void sysMem_cleanup(void);
+static void sysMem_referenceAllocation(int dataAddr);
+static int	sysMem_freeAllocations(void);
+
+// Memory managment structs
+HeapAllocationReferenceNode	*heapAllocationReference	  = { 0 };
+HeapAllocationReferenceNode *heapAllocationReference_HEAD = { 0 };
+HeapAllocationReferenceNode *heapAllocationReference_PREV = { 0 };
 
 // Dev
 Shader dev_Shader = { 0 };
@@ -223,6 +232,7 @@ Shader* shader_heapAllocation_SourceBuffer(void) {
 	}
 
 	Shader* hShader_ptr = (struct Shader*)malloc(sizeof(Shader));
+	sysMem_referenceAllocation((int)hShader_ptr);
 
 	memcpy(
 		hShader_ptr->vertex_src,
@@ -307,9 +317,116 @@ Shader* shader_heapAllocation_SourceBuffer(void) {
 	return hShader_ptr;
 }
 
-static int shader_deleteShader_Heap(void) {
+static void sysMem_referenceAllocation(int dataAddr) {
 
-	return 1;
+	while (1) {
+
+		if (heapAllocationReference == NULL) {
+
+			heapAllocationReference = (HeapAllocationReferenceNode*)malloc(sizeof(HeapAllocationReferenceNode));
+
+			heapAllocationReference->data = dataAddr;
+			heapAllocationReference->next = (HeapAllocationReferenceNode*)malloc(sizeof(HeapAllocationReferenceNode));
+			heapAllocationReference->prev = 0x00;
+			heapAllocationReference_PREV = heapAllocationReference;
+			heapAllocationReference_HEAD = heapAllocationReference->next;
+			break;
+		}
+		else {
+
+			heapAllocationReference_HEAD->data = dataAddr;
+			heapAllocationReference_HEAD->next = (HeapAllocationReferenceNode*)malloc(sizeof(HeapAllocationReferenceNode));
+			heapAllocationReference_HEAD->prev = heapAllocationReference_PREV;
+			heapAllocationReference_HEAD = heapAllocationReference_HEAD->next;
+			break;
+		}
+	}
+}
+
+static int sysMem_freeAllocations(void) {
+
+	HeapAllocationReferenceNode* heapAllocationReference_END = {0};
+	HeapAllocationReferenceNode* _heapAllocationReference = {0};
+
+	while (1) {
+
+		if (heapAllocationReference_END		== 0x00 && 
+			heapAllocationReference->next	== 0x00 ||
+			heapAllocationReference_END		== 0xcdcdcdcdcdcdcdcd && 
+			heapAllocationReference->next	== 0xcdcdcdcdcdcdcdcd
+			) {
+			heapAllocationReference_END = heapAllocationReference;
+
+			if (heapAllocationReference_END->next == 0x00 || 
+				heapAllocationReference_END->next == 0xcdcdcdcdcdcdcdcd) break;
+		}
+
+		else if (
+			heapAllocationReference_END	  == 0x00 && 
+			heapAllocationReference->next != 0x00 || 
+			heapAllocationReference_END	  == 0xcdcdcdcdcdcdcdcd && 
+			heapAllocationReference->next != 0xcdcdcdcdcdcdcdcd
+			) {
+			heapAllocationReference_END = heapAllocationReference->next;
+
+			if (heapAllocationReference_END->next == 0x00 || 
+				heapAllocationReference_END->next == 0xcdcdcdcdcdcdcdcd) break;
+		}
+
+		else if (
+			heapAllocationReference_END	      != 0x00 && 
+			heapAllocationReference_END->next != 0x00 ||
+			heapAllocationReference_END		  != 0xcdcdcdcdcdcdcdcd &&
+			heapAllocationReference_END->next != 0xcdcdcdcdcdcdcdcd
+			) {
+
+			_heapAllocationReference    = heapAllocationReference_END;
+			heapAllocationReference_END	= heapAllocationReference_END->next;
+
+			if (heapAllocationReference_END->prev == 0x00 || 
+				heapAllocationReference_END->prev == 0xcdcdcdcdcdcdcdcd) {
+				heapAllocationReference_END->prev = _heapAllocationReference;
+			}
+
+			_heapAllocationReference = 0x00;
+
+			if (heapAllocationReference_END->next == 0x00 || 
+				heapAllocationReference_END->next == 0xcdcdcdcdcdcdcdcd) break;
+		}
+
+		else if (
+			heapAllocationReference_END		  != 0x00 && 
+			heapAllocationReference_END->next == 0x00 || 
+			heapAllocationReference_END		  != 0xcdcdcdcdcdcdcdcd &&
+			heapAllocationReference_END->next == 0xcdcdcdcdcdcdcdcd
+			) {
+
+			if (heapAllocationReference_END->next == 0x00 || 
+				heapAllocationReference_END->next == 0xcdcdcdcdcdcdcdcd) break;
+		}
+	}
+
+	int allocations = 0;
+	while (1) {
+
+		++allocations;
+
+		if (heapAllocationReference_END->prev == 0x00 || heapAllocationReference_END->prev == 0xcdcdcdcdcdcdcdcd) {
+			free(heapAllocationReference_END);
+			break;
+		}
+
+		_heapAllocationReference = heapAllocationReference_END->prev;
+		free(heapAllocationReference_END);
+		heapAllocationReference_END = _heapAllocationReference;
+	}
+
+	return allocations;
+}
+
+static void sysMem_cleanup(void) {
+	int allocations = sysMem_freeAllocations();
+	printf("\nReleased %d Heap allocation(s)\n", allocations);
 }
 
 _ENGINE_RUNTIME_GL const ENGINE_RUNTIME_GL = {
@@ -323,4 +440,10 @@ _ENGINE_RUNTIME_GL const ENGINE_RUNTIME_GL = {
 _SHADERS_GL const SHADERS_GL = { 
 	shader_heapAllocation_SourceBuffer,
 	shader_bufferSource_Path,
+};
+
+_SYSTEM_MEMORY const SYSTEM_MEMORY = {
+	sysMem_cleanup,
+	//sysMem_referenceAllocation,
+	//sysMem_freeAllocations,
 };

@@ -45,6 +45,8 @@ int main() {
 	ENGINE_RUNTIME_GL.bufferRenderObject(&debugTriangle);
 
 	ENGINE_RUNTIME_GL.render(&debugTriangle, window);
+
+	SYSTEM_MEMORY.cleanup();
 }
 
 void dev_bufferDebugShaderSource(void) {
