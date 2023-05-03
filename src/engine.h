@@ -45,12 +45,6 @@ typedef struct {
 } RenderBuffer;
 
 typedef struct {
-	int data;
-	struct HeapAllocationReferenceNode* next;
-	struct HeapAllocationReferenceNode* prev;
-} HeapAllocationReferenceNode;
-
-typedef struct {
 	GLFWwindow* (* const initialize)		      (void);
 	void		(* const bufferRenderObject)      (RenderObject *renderObject);
 	void		(* const render)		          (RenderFuncPtr renderFuncPtr, GLFWwindow* windowArg);
@@ -63,10 +57,11 @@ typedef struct {
 	void	 (* const bufferSource_Path)	       (char* vertexPath, char* fragmentPath);
 } _SHADERS_GL;
 
+/*
 typedef struct {
-	void (* const cleanup) (void);
 } _SYSTEM_MEMORY;
+*/
 
 extern _ENGINE_RUNTIME_GL const ENGINE_RUNTIME_GL;
 extern _SHADERS_GL		  const SHADERS_GL;
-extern _SYSTEM_MEMORY	  const SYSTEM_MEMORY;
+//extern _SYSTEM_MEMORY	  const SYSTEM_MEMORY;
