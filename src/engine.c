@@ -132,7 +132,7 @@ static void glRenderProc_DrawArrays(Shader *shader) {
 static void glRenderProc_DrawElements(Shader* shader) {
 
 	// Wireframe rendering
-	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // GL_FILL 
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // GL_FILL 
 
 	glUseProgram(shader->gls_program_id);
 
@@ -151,17 +151,60 @@ static void poll_input(void) {
 static void shader_bufferSource_Path(char* vertexPath, char* fragmentPath) {
 
 	char buffer[SHADER_SRC_BUFFER_SIZE];
-	buffer[0] = 0;
+	memset(buffer, 0x00, sizeof(buffer));
 
 	// Load vertex Source
 	FILE* fptr_vertex = fopen(vertexPath, "r");
 
 	SHADER_SRC_BUFFER.vertex_src[0] = 0;
 
-	while (fscanf(fptr_vertex, "%s", buffer) > 0) {
+	char prev_1 = 0x00;
+	char prev_2 = 0x00;
+	char c = 0x00;
 
-		strncat(buffer, " ", sizeof(" "));
-		strncat(SHADER_SRC_BUFFER.vertex_src, buffer, sizeof(buffer));
+	int scan_fptr_vertex = 99;
+	while (scan_fptr_vertex) {
+		
+		bool appendSpace = false;
+
+		memset(buffer, 0x00, sizeof(buffer));
+
+		scan_fptr_vertex = fscanf(fptr_vertex, "%s", buffer);
+
+		for (int i = 0; i < sizeof(buffer); i++) {
+			
+			c = buffer[i];
+
+			if (c == 0x00 && prev_2 == 0x6e && prev_1 == 0x5c) {
+				buffer[i - 1] = 0x0A;
+				break;
+			}
+			else if (c == 0x00 && prev_2 != 0x6e && prev_1 != 0x5c) {
+				strncat(SHADER_SRC_BUFFER.vertex_src, buffer, sizeof(buffer));
+				break;
+			}
+
+			prev_2 = buffer[i - 1];
+			prev_1 = buffer[i - 2];
+		}
+
+	}
+
+	char prev_c = 0x00;
+
+	for (int i = 0; i < strlen(SHADER_SRC_BUFFER.vertex_src); i++) {
+
+		char c = SHADER_SRC_BUFFER.vertex_src[i];
+
+		//printf("\nCharacter: %c\n", c);
+		//printf("Hex value: %#x\n", c);
+		
+		if (prev_c == 0x5c && c == 0x6e) {
+			SHADER_SRC_BUFFER.vertex_src[i] = 0x21;
+			SHADER_SRC_BUFFER.vertex_src[i - 1] = 0x21;
+		}
+
+		prev_c = SHADER_SRC_BUFFER.vertex_src[i];
 	}
 
 	fclose(fptr_vertex);
@@ -213,8 +256,8 @@ Shader* shader_heapAllocation_SourceBuffer(void) {
 	glShaderSource(
 		hShader_ptr->vertex_id,
 		1,
-		&debug_vertex_shader,
-		//&formatted_vertex_src,
+		//&debug_vertex_shader,
+		&formatted_vertex_src,
 		NULL);
 
 	glCompileShader(hShader_ptr->vertex_id);
@@ -245,8 +288,8 @@ Shader* shader_heapAllocation_SourceBuffer(void) {
 	glShaderSource(
 		hShader_ptr->fragment_id, 
 		1, 
-		&debug_fragment_shader,
-		//&formatted_fragment_src, 
+		//&debug_fragment_shader,
+		&formatted_fragment_src, 
 		NULL);
 
 	glCompileShader(hShader_ptr->fragment_id);
