@@ -62,22 +62,16 @@ GLFWwindow* initialize(int version_major, int version_minor) {
 		return -1;
 	}
 
-	printf("Initialized OpenGL %d.%d\n", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
+	printf("OpenGL %d.%d\n", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
 
 	glViewport(0, 0, 800, 600);
 
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-	// Maximum vertex attributes (vertex shader)
-	int nrAttributes;
-	glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &nrAttributes);
-	printf("Supported vertex attributes: %d\n", nrAttributes);
-
 	return window;
 }
 
 static void bufferRenderObject(RenderObject *renderObject) {
-
 
 	glGenVertexArrays		  (1, &renderObject->VAO);
 	glBindVertexArray		  (renderObject->VAO);
@@ -93,12 +87,9 @@ static void bufferRenderObject(RenderObject *renderObject) {
 
 	glVertexAttribPointer	  (0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray (0);
-
-	//glUseProgram(renderObject->shader->gls_program_id);
 }
 
 static void render(
-	//void		(*renderFuncPtr)(RenderObject*), 
 	RenderObject *renderObject, 
 	GLFWwindow	 *windowArg
 ) {
@@ -153,69 +144,70 @@ static void shader_bufferSource_Path(char* vertexPath, char* fragmentPath) {
 	char buffer[SHADER_SRC_BUFFER_SIZE];
 	memset(buffer, 0x00, sizeof(buffer));
 
-	// Load vertex Source
+	// Vertex source from path
 	FILE* fptr_vertex = fopen(vertexPath, "r");
 
 	SHADER_SRC_BUFFER.vertex_src[0] = 0;
 
-	char prev_1 = 0x00;
-	char prev_2 = 0x00;
-	char c = 0x00;
-
 	int scan_fptr_vertex = 99;
-	while (scan_fptr_vertex) {
+	while (scan_fptr_vertex != -1) {
 		
-		bool appendSpace = false;
-
 		memset(buffer, 0x00, sizeof(buffer));
 
 		scan_fptr_vertex = fscanf(fptr_vertex, "%s", buffer);
 
+		int length = 0;
 		for (int i = 0; i < sizeof(buffer); i++) {
 			
-			c = buffer[i];
-
-			if (c == 0x00 && prev_2 == 0x6e && prev_1 == 0x5c) {
-				buffer[i - 1] = 0x0A;
-				break;
+			if (buffer[i] != 0X00) {
+				length = i;
 			}
-			else if (c == 0x00 && prev_2 != 0x6e && prev_1 != 0x5c) {
-				strncat(SHADER_SRC_BUFFER.vertex_src, buffer, sizeof(buffer));
-				break;
-			}
-
-			prev_2 = buffer[i - 1];
-			prev_1 = buffer[i - 2];
+			else break;
 		}
 
-	}
-
-	char prev_c = 0x00;
-
-	for (int i = 0; i < strlen(SHADER_SRC_BUFFER.vertex_src); i++) {
-
-		char c = SHADER_SRC_BUFFER.vertex_src[i];
-
-		//printf("\nCharacter: %c\n", c);
-		//printf("Hex value: %#x\n", c);
-		
-		if (prev_c == 0x5c && c == 0x6e) {
-			SHADER_SRC_BUFFER.vertex_src[i] = 0x21;
-			SHADER_SRC_BUFFER.vertex_src[i - 1] = 0x21;
+		if (buffer[length - 1] == 0x5c && buffer[length] == 0x6e) {
+			buffer[length - 1] = 0x0a;
+			buffer[length] = 0x00;
+		}
+		else {
+			buffer[length + 1] = 0x20;
 		}
 
-		prev_c = SHADER_SRC_BUFFER.vertex_src[i];
+		strcat(SHADER_SRC_BUFFER.vertex_src, buffer, sizeof(buffer));
 	}
 
 	fclose(fptr_vertex);
 
-	// Load fragment Source
+	// Fragment source from path
 	FILE* fptr_fragment = fopen(fragmentPath, "r");
 
 	SHADER_SRC_BUFFER.fragment_src[0] = 0;
 
-	while (fscanf(fptr_fragment, "%s", buffer) > 0) {
-		strncat(SHADER_SRC_BUFFER.fragment_src, buffer, sizeof(buffer));
+	int scan_fptr_fragment = 99;
+	while (scan_fptr_fragment != -1) {
+
+		memset(buffer, 0x00, sizeof(buffer));
+
+		scan_fptr_fragment = fscanf(fptr_vertex, "%s", buffer);
+
+		int length = 0;
+		for (int i = 0; i < sizeof(buffer); i++) {
+
+			if (buffer[i] != 0X00) {
+				length = i;
+			}
+			else break;
+		}
+
+		if (buffer[length - 1] == 0x5c && buffer[length] == 0x6e) {
+			buffer[length - 1] = 0x0a;
+			buffer[length] = 0x00;
+		}
+		else {
+			buffer[length + 1] = 0x20;
+		}
+
+		strcat(SHADER_SRC_BUFFER.fragment_src, buffer, sizeof(buffer));
 	}
 
 	fclose(fptr_fragment);
@@ -244,19 +236,10 @@ Shader* shader_heapAllocation_SourceBuffer(void) {
 	// Create and compile vertex shader
 	hShader_ptr->vertex_id = glCreateShader(GL_VERTEX_SHADER);
 
-	// Debugging shader
-	const char* debug_vertex_shader =
-		"#version 330 core\n"
-		"layout (location = 0) in vec3 aPos;\n"
-		"void main() {\n"
-		"	gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-		"}\0";
-
 	char* formatted_vertex_src = strtok(hShader_ptr->vertex_src, "");
 	glShaderSource(
 		hShader_ptr->vertex_id,
 		1,
-		//&debug_vertex_shader,
 		&formatted_vertex_src,
 		NULL);
 
@@ -276,19 +259,10 @@ Shader* shader_heapAllocation_SourceBuffer(void) {
 	// Create and compile fragment shader
 	hShader_ptr->fragment_id = glCreateShader(GL_FRAGMENT_SHADER);
 
-	// Debugging shader
-	const char* debug_fragment_shader =
-		"#version 330 core\n"
-		"out vec4 FragColor;\n"
-		"void main() {\n"
-		"FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
-		"}\0";
-
 	char* formatted_fragment_src = strtok(hShader_ptr->fragment_src, "");
 	glShaderSource(
 		hShader_ptr->fragment_id, 
 		1, 
-		//&debug_fragment_shader,
 		&formatted_fragment_src, 
 		NULL);
 
