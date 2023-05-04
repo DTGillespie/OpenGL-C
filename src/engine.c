@@ -3,6 +3,9 @@
 
 #define _CRT_SECURE_NO_WARNINGS 1
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
@@ -14,32 +17,32 @@
 #include <engine.h>
 
 // Prototypes: ENGINE_RUNTIME_GL
-static GLFWwindow* initialize		  (int version_major, int version_minor);
-static void        bufferRenderObject (RenderObject *renderObject);
-static void		   render			  (RenderFuncPtr renderFuncPtr, GLFWwindow windowArg);
+static GLFWwindow* gl_Initialize		 (int version_major, int version_minor);
+static void        gl_BufferRenderObject (GL_RenderObject *renderObject);
+static void		   gl_Render			 (RenderFuncPtr renderFuncPtr, GLFWwindow windowArg);
 
-// Prototypes: RUNTIME_SHADERS_GL
-static void	   shader_bufferSource_Path			  (char *vertexPath, char *fragmentPath);
-static Shader* shader_heapAllocation_SourceBuffer (void);
-static int     shader_deleteShader_Heap			  (void);
+// Prototypes: SHADER_GL
+static void		  gl_Shader_BufferSource_Path			(char *vertexPath, char *fragmentPath);
+static GL_Shader* gl_Shader_HeapAllocation_SourceBuffer (void);
 
-// Prototypes: Internal
-void		framebuffer_size_callback (GLFWwindow* window, int width, int height);
-static void poll_input				  (void);
+// Prototypes: TEXTURE_GL
+static GL_Texture* gl_Texture_HeapAllocation_Path(char* path);
 
-// Prototypes: Misc.
-static void glRenderProc_DrawArrays   (Shader* shader);
-static void glRenderProc_DrawElements (Shader* shader);
+// Prototypes: GL Internal
+void		gl_Framebuffer_Size_Callback (GLFWwindow* window, int width, int height);
+static void gl_Poll_Input				  (void);
+
+// Prototypes: GL Misc.
+static void gl_RenderProc_DrawArrays   (GL_Shader* shader);
+static void gl_RenderProc_DrawElements (GL_Shader* shader);
 
 static ShaderSourceBuffer SHADER_SRC_BUFFER = { .buffered = 0, 0 };
 
-// Prototypes: Memory managment
-
 // Dev
-Shader dev_Shader = { 0 };
+GL_Shader dev_Shader = { 0 };
 GLFWwindow* window;
 
-GLFWwindow* initialize(int version_major, int version_minor) {
+GLFWwindow* gl_Initialize(int version_major, int version_minor) {
 	
 	glfwInit();
 
@@ -67,37 +70,37 @@ GLFWwindow* initialize(int version_major, int version_minor) {
 
 	glViewport(0, 0, 800, 600);
 
-	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	glfwSetFramebufferSizeCallback(window, gl_Framebuffer_Size_Callback);
 
 	return window;
 }
 
-static void bufferRenderObject(RenderObject *renderObject) {
+static void gl_BufferRenderObject(GL_RenderObject *renderObject) {
 
-	glGenVertexArrays		  (1, &renderObject->VAO);
-	glBindVertexArray		  (renderObject->VAO);
+	glGenVertexArrays		  (1, &renderObject->renderBuffer.VAO);
+	glBindVertexArray		  (renderObject->renderBuffer.VAO);
 
-	glGenBuffers			  (1, &renderObject->VBO);
-	glBindBuffer			  (GL_ARRAY_BUFFER, renderObject->VBO);
+	glGenBuffers			  (1, &renderObject->renderBuffer.VBO);
+	glBindBuffer			  (GL_ARRAY_BUFFER, renderObject->renderBuffer.VBO);
 	glBufferData			  (GL_ARRAY_BUFFER, sizeof(renderObject->mesh), renderObject->mesh, GL_STATIC_DRAW);
 
 
-	glGenBuffers			  (1, &renderObject->EBO);
-	glBindBuffer			  (GL_ELEMENT_ARRAY_BUFFER, renderObject->EBO);
+	glGenBuffers			  (1, &renderObject->renderBuffer.EBO);
+	glBindBuffer			  (GL_ELEMENT_ARRAY_BUFFER, renderObject->renderBuffer.EBO);
 	glBufferData			  (GL_ELEMENT_ARRAY_BUFFER, sizeof(renderObject->indices), renderObject->indices, GL_STATIC_DRAW);
 
 	glVertexAttribPointer	  (0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray (0);
 }
 
-static void render(
-	RenderObject *renderObject, 
-	GLFWwindow	 *windowArg
+static void gl_Render(
+	GL_RenderObject *renderObject, 
+	GLFWwindow		*windowArg
 ) {
 
 	while (!glfwWindowShouldClose(windowArg)) {
 
-		poll_input(windowArg);
+		gl_Poll_Input(windowArg);
 
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
@@ -111,7 +114,7 @@ static void render(
 	glfwTerminate();
 }
 
-static void glRenderProc_DrawArrays(Shader *shader) {
+static void gl_RenderProc_DrawArrays(GL_Shader *shader) {
 
 	// Wireframe rendering
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // GL_FILL 
@@ -121,7 +124,7 @@ static void glRenderProc_DrawArrays(Shader *shader) {
 	glDrawArrays(GL_TRIANGLES, 0, 3);					 // Rendering VBO/VAO
 }
 
-static void glRenderProc_DrawElements(Shader* shader) {
+static void gl_RenderProc_DrawElements(GL_Shader* shader) {
 
 	// Wireframe rendering
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // GL_FILL 
@@ -131,16 +134,16 @@ static void glRenderProc_DrawElements(Shader* shader) {
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // Rendering EBO
 }
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
+void gl_Framebuffer_Size_Callback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
 }
 
-static void poll_input(void) {
+static void gl_Poll_Input(void) {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, 1);
 }
 
-static void shader_bufferSource_Path(char* vertexPath, char* fragmentPath) {
+static void gl_Shader_BufferSource_Path(char* vertexPath, char* fragmentPath) {
 
 	char buffer[SHADER_SRC_BUFFER_SIZE];
 	memset(buffer, 0x00, sizeof(buffer));
@@ -216,14 +219,14 @@ static void shader_bufferSource_Path(char* vertexPath, char* fragmentPath) {
 	SHADER_SRC_BUFFER.buffered = 1;
 }
 
-Shader* shader_heapAllocation_SourceBuffer(void) {
+static GL_Shader* gl_Shader_HeapAllocation_SourceBuffer(void) {
 
 	if (!SHADER_SRC_BUFFER.buffered) {
 		printf("ERROR::shader_heapAllocationFromSource()::SHADER_SOURCE_NOT_BUFFERED\n");
 		return NULL;
 	}
 
-	Shader* hShader_ptr = (struct Shader*)malloc(sizeof(Shader));
+	GL_Shader* hShader_ptr = (struct Shader*)malloc(sizeof(GL_Shader));
 
 	memcpy(
 		hShader_ptr->vertex_src,
@@ -308,19 +311,54 @@ Shader* shader_heapAllocation_SourceBuffer(void) {
 	return hShader_ptr;
 }
 
+static GL_Texture* gl_Texture_HeapAllocation_Path(char* path) {
+
+	GL_Texture* hTexture_ptr = (GL_Texture*) malloc(sizeof(GL_Texture));
+
+	glGenTextures(1, &hTexture_ptr->texture_id);
+	glBindTexture(GL_TEXTURE_2D, hTexture_ptr->texture_id);
+
+	glTextureParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTextureParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTextureParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTextureParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	hTexture_ptr->image->data = stbi_load(
+		path, 
+		&hTexture_ptr->image->width, 
+		&hTexture_ptr->image->height, 
+		&hTexture_ptr->image->nrChannels,
+		0);
+
+	if (hTexture_ptr->image->data) {
+
+		glTexImage2D(
+			GL_TEXTURE_2D,0,
+			GL_RGB,
+			hTexture_ptr->image->width,
+			hTexture_ptr->image->height,
+			0,
+			GL_RGB,
+			GL_UNSIGNED_BYTE,
+			hTexture_ptr->image->data);
+
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+}
+
 _ENGINE_RUNTIME_GL const ENGINE_RUNTIME_GL = {
-	initialize, 
-	bufferRenderObject,
-	render,
-	glRenderProc_DrawArrays,
-	glRenderProc_DrawElements,
+	gl_Initialize, 
+	gl_BufferRenderObject,
+	gl_Render,
+	gl_RenderProc_DrawArrays,
+	gl_RenderProc_DrawElements,
 };
 
-_SHADERS_GL const SHADERS_GL = { 
-	shader_heapAllocation_SourceBuffer,
-	shader_bufferSource_Path,
+_SHADER_GL const SHADER_GL = { 
+	gl_Shader_HeapAllocation_SourceBuffer,
+	gl_Shader_BufferSource_Path,
 };
 
-/*
-_SYSTEM_MEMORY const SYSTEM_MEMORY = {
-}; */
+_TEXTURE_GL const TEXTURE_GL = {
+	gl_Texture_HeapAllocation_Path,
+};

@@ -14,7 +14,7 @@ char cwd[CWD_BUFFER_SIZE];
 GLFWwindow *window;
 
 // Development
-void dev_bufferDebugShaderSource(void);
+void dev_bufferShaderSource(void);
 
 int main() {
 
@@ -24,8 +24,8 @@ int main() {
 
 	_getcwd(cwd, CWD_BUFFER_SIZE);
 
-	dev_bufferDebugShaderSource();
-	RenderObject debugTriangle = {
+	dev_bufferShaderSource();
+	GL_RenderObject debugTriangle = {
 
 		.mesh =
 			 0.5f,  0.5f, 0.0f,
@@ -35,9 +35,14 @@ int main() {
 
 		.indices =
 			 0, 1, 3,
-		     1, 2, 3,
+			 1, 2, 3,
 
-		.shader = SHADERS_GL.heapAllocation_SourceBuffer(),
+		.material = {
+			.shader = SHADER_GL.heapAllocation_SourceBuffer(),
+			.texture = TEXTURE_GL.heapAllocation_Path(),
+		},
+
+		.renderBuffer = {0},
 
 		.renderFuncPtr = ENGINE_RUNTIME_GL.renderProc_DrawElements,
 	};
@@ -47,7 +52,7 @@ int main() {
 	ENGINE_RUNTIME_GL.render(&debugTriangle, window);
 }
 
-void dev_bufferDebugShaderSource(void) {
+void dev_bufferShaderSource(void) {
 
 	char vertex_shaderPath[CWD_BUFFER_SIZE];
 	char vertex_shaderPath_suffix[23];
@@ -69,5 +74,5 @@ void dev_bufferDebugShaderSource(void) {
 			   fragment_shaderPath_suffix,
 		sizeof(fragment_shaderPath_suffix));
 
-	SHADERS_GL.bufferSource_Path(&vertex_shaderPath, &fragment_shaderPath);
+	SHADER_GL.bufferSource_Path(&vertex_shaderPath, &fragment_shaderPath);
 }
