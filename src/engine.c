@@ -93,10 +93,7 @@ static void gl_BufferRenderObject(GL_RenderObject *renderObject) {
 	glEnableVertexAttribArray (0);
 }
 
-static void gl_Render(
-	GL_RenderObject *renderObject, 
-	GLFWwindow		*windowArg
-) {
+static void gl_Render(GL_RenderObject *renderObject, GLFWwindow *windowArg) {
 
 	while (!glfwWindowShouldClose(windowArg)) {
 
@@ -105,7 +102,7 @@ static void gl_Render(
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		renderObject->renderFuncPtr(renderObject->shader);
+		renderObject->renderFuncPtr(renderObject->material.shader);
 
 		glfwPollEvents();
 		glfwSwapBuffers(windowArg);
@@ -313,37 +310,54 @@ static GL_Shader* gl_Shader_HeapAllocation_SourceBuffer(void) {
 
 static GL_Texture* gl_Texture_HeapAllocation_Path(char* path) {
 
-	GL_Texture* hTexture_ptr = (GL_Texture*) malloc(sizeof(GL_Texture));
+	int width_buffer, height_buffer, nrChannels_buffer;
+	unsigned char *imageDataBuffer = stbi_load(
+		path,
+		&width_buffer,
+		&height_buffer,
+		&nrChannels_buffer,
+		0);
+
+	Image imageBuffer = { 
+		.data		= imageDataBuffer, 
+		.width		= width_buffer, 
+		.height		= height_buffer, 
+		.nrChannels = nrChannels_buffer
+	};
+
+	GL_Texture textureBuffer = { 
+		.image		= imageBuffer, 
+		.texture_id = 0x00 
+	};
+
+	GL_Texture* hTexture_ptr = (GL_Texture*) malloc(sizeof(textureBuffer));
+
+	hTexture_ptr->image = imageBuffer;
 
 	glGenTextures(1, &hTexture_ptr->texture_id);
 	glBindTexture(GL_TEXTURE_2D, hTexture_ptr->texture_id);
 
-	glTextureParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTextureParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTextureParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTextureParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	hTexture_ptr->image->data = stbi_load(
-		path, 
-		&hTexture_ptr->image->width, 
-		&hTexture_ptr->image->height, 
-		&hTexture_ptr->image->nrChannels,
-		0);
-
-	if (hTexture_ptr->image->data) {
+	if (hTexture_ptr->image.data) {
 
 		glTexImage2D(
 			GL_TEXTURE_2D,0,
 			GL_RGB,
-			hTexture_ptr->image->width,
-			hTexture_ptr->image->height,
+			hTexture_ptr->image.width,
+			hTexture_ptr->image.height,
 			0,
 			GL_RGB,
 			GL_UNSIGNED_BYTE,
-			hTexture_ptr->image->data);
+			hTexture_ptr->image.data);
 
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
+
+	return hTexture_ptr;
 }
 
 _ENGINE_RUNTIME_GL const ENGINE_RUNTIME_GL = {

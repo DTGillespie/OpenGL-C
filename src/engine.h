@@ -3,18 +3,19 @@
 #include <stdbool.h>
 
 #define SHADER_SRC_BUFFER_SIZE 1024
+//#define IMAGE_BUFFER_SIZE 0x61A8000
 
 #define VERTEX_ARRAY_SIZE 512
 #define INDEX_ARRAY_SIZE  512
 
 typedef struct {
 	int width, height, nrChannels;
-	unsigned char* data;
+	unsigned char *data;
 } Image;
 
 typedef struct {
 	unsigned int texture_id;
-	Image *image;
+	Image image;
 } GL_Texture;
 
 typedef struct {
