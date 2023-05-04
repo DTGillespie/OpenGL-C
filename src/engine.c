@@ -78,7 +78,6 @@ GLFWwindow* gl_Initialize(int version_major, int version_minor) {
 static void gl_BufferRenderObject(GL_RenderObject *renderObject) {
 
 	glGenVertexArrays		  (1, &renderObject->renderBuffer.VAO);
-	glBindVertexArray		  (renderObject->renderBuffer.VAO);
 
 	glGenBuffers			  (1, &renderObject->renderBuffer.VBO);
 	glBindBuffer			  (GL_ARRAY_BUFFER, renderObject->renderBuffer.VBO);
@@ -89,8 +88,15 @@ static void gl_BufferRenderObject(GL_RenderObject *renderObject) {
 	glBindBuffer			  (GL_ELEMENT_ARRAY_BUFFER, renderObject->renderBuffer.EBO);
 	glBufferData			  (GL_ELEMENT_ARRAY_BUFFER, sizeof(renderObject->indices), renderObject->indices, GL_STATIC_DRAW);
 
-	glVertexAttribPointer	  (0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray (0);
+	//glVertexAttribPointer	  (0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	//glEnableVertexAttribArray (0);
+
+	glBindTexture(GL_TEXTURE_2D, renderObject->material.texture->texture_id);
+	
+	glBindVertexArray(renderObject->renderBuffer.VAO);
+
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+	glEnableVertexAttribArray(2);
 }
 
 static void gl_Render(GL_RenderObject *renderObject, GLFWwindow *windowArg) {
@@ -124,7 +130,7 @@ static void gl_RenderProc_DrawArrays(GL_Shader *shader) {
 static void gl_RenderProc_DrawElements(GL_Shader* shader) {
 
 	// Wireframe rendering
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // GL_FILL 
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // GL_FILL 
 
 	glUseProgram(shader->gls_program_id);
 
@@ -356,6 +362,12 @@ static GL_Texture* gl_Texture_HeapAllocation_Path(char* path) {
 
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
+	else {
+		printf("ERROR::gl_Texture_HeapAllocation_Path()::TEXTURE::FAILED_TO_LOAD_TEXTURE");
+		return NULL;
+	}
+
+	stbi_image_free(imageDataBuffer);
 
 	return hTexture_ptr;
 }
