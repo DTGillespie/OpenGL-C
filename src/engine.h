@@ -69,7 +69,7 @@ typedef struct {
 	void		(* const bufferRenderObject)      (GL_RenderObject *renderObject);
 	void		(* const render)		          (RenderFuncPtr renderFuncPtr, GLFWwindow* windowArg);
 	void		(* const renderProc_DrawArrays)	  (GL_Shader* shader);
-	void		(* const renderProc_DrawElements) (GL_Shader* shader);
+	void		(* const renderProc_DrawElements) (GL_RenderObject *renderObject);
 } _ENGINE_RUNTIME_GL;
 
 typedef struct {
@@ -78,7 +78,7 @@ typedef struct {
 } _SHADER_GL;
 
 typedef struct {
-	GL_Texture* (* const heapAllocation_Path) (char* path);
+	GL_Texture* (* const heapAllocation_Path) (char* path, GL_Shader *shader);
 } _TEXTURE_GL;
 
 extern _ENGINE_RUNTIME_GL const ENGINE_RUNTIME_GL;

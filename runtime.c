@@ -29,6 +29,8 @@ int main() {
 
 	dev_Setup();
 
+	ENGINE_RUNTIME_GL.bufferRenderObject(&debugTriangle);
+
 	GL_RenderObject debugTriangle = {
 
 		/*
@@ -51,15 +53,13 @@ int main() {
 
 		.material = {
 			.shader	 = SHADER_GL  .heapAllocation_SourceBuffer(),
-			.texture = TEXTURE_GL .heapAllocation_Path(dev_TexturePath),
+			.texture = TEXTURE_GL .heapAllocation_Path(dev_TexturePath, debugTriangle.material.shader),
 		},
 
 		.renderBuffer = {0},
 
 		.renderFuncPtr = ENGINE_RUNTIME_GL.renderProc_DrawElements,
 	};
-
-	ENGINE_RUNTIME_GL.bufferRenderObject(&debugTriangle);
 
 	ENGINE_RUNTIME_GL.render(&debugTriangle, window);
 }

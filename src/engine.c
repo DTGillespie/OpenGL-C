@@ -26,7 +26,7 @@ static void		  gl_Shader_BufferSource_Path			(char *vertexPath, char *fragmentPa
 static GL_Shader* gl_Shader_HeapAllocation_SourceBuffer (void);
 
 // Prototypes: TEXTURE_GL
-static GL_Texture* gl_Texture_HeapAllocation_Path(char* path);
+static GL_Texture* gl_Texture_HeapAllocation_Path(char* path, GL_Shader *shader);
 
 // Prototypes: GL Internal
 void		gl_Framebuffer_Size_Callback (GLFWwindow* window, int width, int height);
@@ -34,7 +34,7 @@ static void gl_Poll_Input				  (void);
 
 // Prototypes: GL Misc.
 static void gl_RenderProc_DrawArrays   (GL_Shader* shader);
-static void gl_RenderProc_DrawElements (GL_Shader* shader);
+static void gl_RenderProc_DrawElements (GL_RenderObject *renderObject);
 
 static ShaderSourceBuffer SHADER_SRC_BUFFER = { .buffered = 0, 0 };
 
@@ -80,21 +80,25 @@ static void gl_BufferRenderObject(GL_RenderObject *renderObject) {
 	glGenVertexArrays		  (1, &renderObject->renderBuffer.VAO);
 
 	glGenBuffers			  (1, &renderObject->renderBuffer.VBO);
+	glGenBuffers			  (1, &renderObject->renderBuffer.EBO);
+
+	glBindVertexArray(renderObject->renderBuffer.VAO);
+
 	glBindBuffer			  (GL_ARRAY_BUFFER, renderObject->renderBuffer.VBO);
 	glBufferData			  (GL_ARRAY_BUFFER, sizeof(renderObject->mesh), renderObject->mesh, GL_STATIC_DRAW);
 
-
-	glGenBuffers			  (1, &renderObject->renderBuffer.EBO);
 	glBindBuffer			  (GL_ELEMENT_ARRAY_BUFFER, renderObject->renderBuffer.EBO);
 	glBufferData			  (GL_ELEMENT_ARRAY_BUFFER, sizeof(renderObject->indices), renderObject->indices, GL_STATIC_DRAW);
 
-	//glVertexAttribPointer	  (0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	//glEnableVertexAttribArray (0);
+	// Position attribute
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(1);
 
-	glBindTexture(GL_TEXTURE_2D, renderObject->material.texture->texture_id);
-	
-	glBindVertexArray(renderObject->renderBuffer.VAO);
+	// Color attribute
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
 
+	// Texture coord attribute
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
 	glEnableVertexAttribArray(2);
 }
@@ -108,7 +112,7 @@ static void gl_Render(GL_RenderObject *renderObject, GLFWwindow *windowArg) {
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		renderObject->renderFuncPtr(renderObject->material.shader);
+		renderObject->renderFuncPtr(&renderObject->material);
 
 		glfwPollEvents();
 		glfwSwapBuffers(windowArg);
@@ -127,12 +131,17 @@ static void gl_RenderProc_DrawArrays(GL_Shader *shader) {
 	glDrawArrays(GL_TRIANGLES, 0, 3);					 // Rendering VBO/VAO
 }
 
-static void gl_RenderProc_DrawElements(GL_Shader* shader) {
+static void gl_RenderProc_DrawElements(GL_RenderObject *renderObject) {
 
 	// Wireframe rendering
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // GL_FILL 
 
-	glUseProgram(shader->gls_program_id);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, renderObject->material.texture->texture_id);
+
+	//glUseProgram(renderObject->material.shader->gls_program_id);
+
+	glBindVertexArray(renderObject->renderBuffer.VAO);
 
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // Rendering EBO
 }
@@ -314,7 +323,7 @@ static GL_Shader* gl_Shader_HeapAllocation_SourceBuffer(void) {
 	return hShader_ptr;
 }
 
-static GL_Texture* gl_Texture_HeapAllocation_Path(char* path) {
+static GL_Texture* gl_Texture_HeapAllocation_Path(char* path, GL_Shader *shader) {
 
 	int width_buffer, height_buffer, nrChannels_buffer;
 	unsigned char *imageDataBuffer = stbi_load(
@@ -342,9 +351,12 @@ static GL_Texture* gl_Texture_HeapAllocation_Path(char* path) {
 
 	glGenTextures(1, &hTexture_ptr->texture_id);
 	glBindTexture(GL_TEXTURE_2D, hTexture_ptr->texture_id);
-
+	
+	// Texture wrapping
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	// Texture filtering
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -368,6 +380,10 @@ static GL_Texture* gl_Texture_HeapAllocation_Path(char* path) {
 	}
 
 	stbi_image_free(imageDataBuffer);
+
+	glUseProgram(shader->gls_program_id);
+
+	glUniform1i(glGetUniformLocation(shader->gls_program_id, "outTexture"), 0);
 
 	return hTexture_ptr;
 }
