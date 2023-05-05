@@ -17,9 +17,10 @@
 #include <engine.h>
 
 // Prototypes: ENGINE_RUNTIME_GL
-static GLFWwindow* gl_Initialize		 (int version_major, int version_minor);
-static void        gl_BufferRenderObject (GL_RenderObject *renderObject);
-static void		   gl_Render			 (RenderFuncPtr renderFuncPtr, GLFWwindow windowArg);
+static GLFWwindow* gl_Initialize		   (int version_major, int version_minor);
+static void        gl_BufferRenderObject   (GL_RenderObject *renderObject);
+static void		   gl_BindShaderAttributes (GL_RenderObject* renderObject);
+static void		   gl_Render			   (RenderFuncPtr renderFuncPtr, GLFWwindow windowArg);
 
 // Prototypes: SHADER_GL
 static void		  gl_Shader_BufferSource_Path			(char *vertexPath, char *fragmentPath);
@@ -89,15 +90,18 @@ static void gl_BufferRenderObject(GL_RenderObject *renderObject) {
 
 	glBindBuffer			  (GL_ELEMENT_ARRAY_BUFFER, renderObject->renderBuffer.EBO);
 	glBufferData			  (GL_ELEMENT_ARRAY_BUFFER, sizeof(renderObject->indices), renderObject->indices, GL_STATIC_DRAW);
+}
+
+static void gl_BindShaderAttributes(GL_RenderObject* renderObject) {
 
 	// Position attribute
-	unsigned int posAttrib = glGetAttribLocation(renderObject->material.shader->gls_program_id, "aPos");
-	glEnableVertexAttribArray (posAttrib);
+	unsigned int posAttrib = glGetAttribLocation(renderObject->material.shader->gls_program_id, renderObject->material.shaderAttributes[0]);
+	glEnableVertexAttribArray(posAttrib);
 	glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
 
 	// Texture coord attribute
-	unsigned int texCoordAttrib = glGetAttribLocation(renderObject->material.shader->gls_program_id, "aTexCoord");
-	glEnableVertexAttribArray (texCoordAttrib);
+	unsigned int texCoordAttrib = glGetAttribLocation(renderObject->material.shader->gls_program_id, renderObject->material.shaderAttributes[1]);
+	glEnableVertexAttribArray(texCoordAttrib);
 	glVertexAttribPointer(texCoordAttrib, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 }
 
@@ -173,8 +177,8 @@ static void gl_Shader_BufferSource_Path(char* vertexPath, char* fragmentPath) {
 		}
 
 		if (buffer[length - 1] == 0x5c && buffer[length] == 0x6e) {
-			buffer[length - 1] = 0x0a;
-			buffer[length] = 0x00;
+			buffer[length - 1] =  0x0a;
+			buffer[length]	   =  0x00;
 		}
 		else {
 			buffer[length + 1] = 0x20;
@@ -374,7 +378,7 @@ static GL_Texture* gl_Texture_HeapAllocation_Path(char* path, GL_Shader *shader)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	//stbi_image_free(imageDataBuffer);
+	stbi_image_free(imageDataBuffer);
 
 	glUseProgram(shader->gls_program_id);
 
@@ -384,6 +388,7 @@ static GL_Texture* gl_Texture_HeapAllocation_Path(char* path, GL_Shader *shader)
 _ENGINE_RUNTIME_GL const ENGINE_RUNTIME_GL = {
 	gl_Initialize, 
 	gl_BufferRenderObject,
+	gl_BindShaderAttributes,
 	gl_Render,
 	gl_RenderProc_DrawArrays,
 	gl_RenderProc_DrawElements,

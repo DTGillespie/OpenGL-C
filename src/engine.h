@@ -32,6 +32,7 @@ typedef struct {
 typedef struct {
 	GL_Shader  *shader;
 	GL_Texture *texture;
+	char *shaderAttributes[2];
 } GL_Material;
 
 typedef void (*RenderFuncPtr)(GL_Shader*);
@@ -67,6 +68,7 @@ typedef struct {
 typedef struct {
 	GLFWwindow* (* const initialize)		      (void);
 	void		(* const bufferRenderObject)      (GL_RenderObject *renderObject);
+	void		(* const bindShaderAttributes)	  (GL_RenderObject* renderObject);
 	void		(* const render)		          (RenderFuncPtr renderFuncPtr, GLFWwindow* windowArg);
 	void		(* const renderProc_DrawArrays)	  (GL_Shader* shader);
 	void		(* const renderProc_DrawElements) (GL_RenderObject *renderObject);

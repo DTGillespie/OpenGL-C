@@ -29,33 +29,37 @@ int main() {
 
 	dev_Setup();
 
-	GL_RenderObject debugTriangle = {
+	GL_RenderObject dev_Triangle = {
 
 		.mesh = 
 			// positions       // texture coords
-			0.5f,  0.5f, 0.0f, 1.0f, 1.0f,   // top right
-			0.5f, -0.5f, 0.0f, 1.0f, 0.0f,   // bottom right
-		   -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,   // bottom left
-		   -0.5f,  0.5f, 0.0f, 0.0f, 1.0f,   // top left 
+			0.5f,  0.5f, 0.0f, 1.0f, 1.0f,
+			0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+		   -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,
+		   -0.5f,  0.5f, 0.0f, 0.0f, 1.0f,
 
 		.indices =
 			 0, 1, 3,
 			 1, 2, 3,
 
 		.material = {
-			.shader	 = SHADER_GL  .heapAllocation_SourceBuffer(),
+			.shader	 = SHADER_GL.heapAllocation_SourceBuffer(),
+			.texture = TEXTURE_GL.heapAllocation_Path(dev_TexturePath, dev_Triangle.material.shader),
+
+			.shaderAttributes[0] = "aPos",
+			.shaderAttributes[1] = "aTexCoord",
 		},
 
 		.renderBuffer = {0},
 
 		.renderFuncPtr = ENGINE_RUNTIME_GL.renderProc_DrawElements,
+
 	};
 
-	ENGINE_RUNTIME_GL.bufferRenderObject(&debugTriangle);
+	ENGINE_RUNTIME_GL.bufferRenderObject   (&dev_Triangle);
+	ENGINE_RUNTIME_GL.bindShaderAttributes (&dev_Triangle);
 
-	debugTriangle.material.texture = TEXTURE_GL.heapAllocation_Path(dev_TexturePath, debugTriangle.material.shader);
-
-	ENGINE_RUNTIME_GL.render(&debugTriangle, window);
+	ENGINE_RUNTIME_GL.render(&dev_Triangle, window);
 }
 
 void dev_Setup(void) {
@@ -64,7 +68,7 @@ void dev_Setup(void) {
 	dev_bufferShaderSource();
 
 	// Texture path
-	char dev_TexturePath_Suffix[]  = "\\resources\\textures\\container.jpg";
+	char dev_TexturePath_Suffix[]  = "\\resources\\textures\\test.png";
 	strncat(dev_TexturePath, cwd, sizeof(cwd));
 	strncat(dev_TexturePath, dev_TexturePath_Suffix, sizeof(dev_TexturePath_Suffix));
 
