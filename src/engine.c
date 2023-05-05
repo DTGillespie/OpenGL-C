@@ -91,16 +91,14 @@ static void gl_BufferRenderObject(GL_RenderObject *renderObject) {
 	glBufferData			  (GL_ELEMENT_ARRAY_BUFFER, sizeof(renderObject->indices), renderObject->indices, GL_STATIC_DRAW);
 
 	// Position attribute
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(1);
-
-	// Color attribute
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
+	unsigned int posAttrib = glGetAttribLocation(renderObject->material.shader->gls_program_id, "aPos");
+	glEnableVertexAttribArray (posAttrib);
+	glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
 
 	// Texture coord attribute
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-	glEnableVertexAttribArray(2);
+	unsigned int texCoordAttrib = glGetAttribLocation(renderObject->material.shader->gls_program_id, "aTexCoord");
+	glEnableVertexAttribArray (texCoordAttrib);
+	glVertexAttribPointer(texCoordAttrib, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 }
 
 static void gl_Render(GL_RenderObject *renderObject, GLFWwindow *windowArg) {
@@ -135,13 +133,6 @@ static void gl_RenderProc_DrawElements(GL_RenderObject *renderObject) {
 
 	// Wireframe rendering
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // GL_FILL 
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, renderObject->material.texture->texture_id);
-
-	//glUseProgram(renderObject->material.shader->gls_program_id);
-
-	glBindVertexArray(renderObject->renderBuffer.VAO);
 
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // Rendering EBO
 }
@@ -340,30 +331,23 @@ static GL_Texture* gl_Texture_HeapAllocation_Path(char* path, GL_Shader *shader)
 		.nrChannels = nrChannels_buffer
 	};
 
-	GL_Texture textureBuffer = { 
-		.image		= imageBuffer, 
-		.texture_id = 0x00 
+	GL_Texture textureBuffer = {
+		.image = imageBuffer,
+		.texture_id = -1,
 	};
 
 	GL_Texture* hTexture_ptr = (GL_Texture*) malloc(sizeof(textureBuffer));
 
 	hTexture_ptr->image = imageBuffer;
 
-	glGenTextures(1, &hTexture_ptr->texture_id);
+	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, hTexture_ptr->texture_id);
-	
-	// Texture wrapping
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-	// Texture filtering
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	if (hTexture_ptr->image.data) {
 
 		glTexImage2D(
-			GL_TEXTURE_2D,0,
+			GL_TEXTURE_2D, 
+			0,
 			GL_RGB,
 			hTexture_ptr->image.width,
 			hTexture_ptr->image.height,
@@ -379,11 +363,20 @@ static GL_Texture* gl_Texture_HeapAllocation_Path(char* path, GL_Shader *shader)
 		return NULL;
 	}
 
-	stbi_image_free(imageDataBuffer);
+	unsigned int outTextureUniformPos = glGetUniformLocation(shader->gls_program_id, "outTexture");
+	glUniform1i(outTextureUniformPos, 0);
+
+	// Texture wrapping
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	// Texture filtering
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	//stbi_image_free(imageDataBuffer);
 
 	glUseProgram(shader->gls_program_id);
-
-	glUniform1i(glGetUniformLocation(shader->gls_program_id, "outTexture"), 0);
 
 	return hTexture_ptr;
 }

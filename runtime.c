@@ -29,23 +29,14 @@ int main() {
 
 	dev_Setup();
 
-	ENGINE_RUNTIME_GL.bufferRenderObject(&debugTriangle);
-
 	GL_RenderObject debugTriangle = {
 
-		/*
-		.mesh =
-			 0.5f,  0.5f, 0.0f,
-			 0.5f, -0.5f, 0.0f,
-			-0.5f, -0.5f, 0.0f,
-			-0.5f,  0.5f, 0.0f,*/
-
 		.mesh = 
-			// positions          // colors           // texture coords
-			0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // top right
-			0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // bottom right
-		   -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // bottom left
-		   -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f,    // top left 
+			// positions       // texture coords
+			0.5f,  0.5f, 0.0f, 1.0f, 1.0f,   // top right
+			0.5f, -0.5f, 0.0f, 1.0f, 0.0f,   // bottom right
+		   -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,   // bottom left
+		   -0.5f,  0.5f, 0.0f, 0.0f, 1.0f,   // top left 
 
 		.indices =
 			 0, 1, 3,
@@ -53,13 +44,16 @@ int main() {
 
 		.material = {
 			.shader	 = SHADER_GL  .heapAllocation_SourceBuffer(),
-			.texture = TEXTURE_GL .heapAllocation_Path(dev_TexturePath, debugTriangle.material.shader),
 		},
 
 		.renderBuffer = {0},
 
 		.renderFuncPtr = ENGINE_RUNTIME_GL.renderProc_DrawElements,
 	};
+
+	ENGINE_RUNTIME_GL.bufferRenderObject(&debugTriangle);
+
+	debugTriangle.material.texture = TEXTURE_GL.heapAllocation_Path(dev_TexturePath, debugTriangle.material.shader);
 
 	ENGINE_RUNTIME_GL.render(&debugTriangle, window);
 }
@@ -70,7 +64,7 @@ void dev_Setup(void) {
 	dev_bufferShaderSource();
 
 	// Texture path
-	char dev_TexturePath_Suffix[]  = "\\assets\\textures\\container.jpg";
+	char dev_TexturePath_Suffix[]  = "\\resources\\textures\\container.jpg";
 	strncat(dev_TexturePath, cwd, sizeof(cwd));
 	strncat(dev_TexturePath, dev_TexturePath_Suffix, sizeof(dev_TexturePath_Suffix));
 
@@ -78,20 +72,20 @@ void dev_Setup(void) {
 
 void dev_bufferShaderSource(void) {
 
-	char vertex_shaderPath[PATH_STRING_SIZE];
-	char vertex_shaderPath_suffix[23];
+	char vertex_shaderPath[PATH_STRING_SIZE / 2];
+	char vertex_shaderPath_suffix[PATH_STRING_SIZE / 2];
 
-	strcpy(vertex_shaderPath_suffix, "\\glsl\\vertex_test.glsl");
+	strcpy(vertex_shaderPath_suffix, "\\glsl\\vertex_test_texture.glsl");
 	strcpy(vertex_shaderPath, cwd);
 	strncat(
 			   vertex_shaderPath, 
 			   vertex_shaderPath_suffix, 
 		sizeof(vertex_shaderPath_suffix));
 
-	char fragment_shaderPath[PATH_STRING_SIZE];
-	char fragment_shaderPath_suffix[25];
+	char fragment_shaderPath[PATH_STRING_SIZE / 2];
+	char fragment_shaderPath_suffix[PATH_STRING_SIZE / 2];
 	
-	strcpy(fragment_shaderPath_suffix, "\\glsl\\fragment_test.glsl");
+	strcpy(fragment_shaderPath_suffix, "\\glsl\\fragment_test_texture.glsl");
 	strcpy(fragment_shaderPath, cwd);
 	strncat(
 			   fragment_shaderPath,
