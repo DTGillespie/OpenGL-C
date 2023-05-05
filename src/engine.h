@@ -9,13 +9,17 @@
 #define INDEX_ARRAY_SIZE  512
 
 typedef struct {
+
 	int width, height, nrChannels;
 	unsigned char *data;
+
 } Image;
 
 typedef struct {
+
 	unsigned int texture_id;
 	Image image;
+
 } GL_Texture;
 
 typedef struct {
@@ -30,9 +34,13 @@ typedef struct {
 } GL_Shader;
 
 typedef struct {
+
 	GL_Shader  *shader;
 	GL_Texture *texture;
-	char *shaderAttributes[2];
+	GL_Texture* debug_Texture;
+
+	char *shaderAttributes[3];
+
 } GL_Material;
 
 typedef void (*RenderFuncPtr)(GL_Shader*);
@@ -80,7 +88,7 @@ typedef struct {
 } _SHADER_GL;
 
 typedef struct {
-	GL_Texture* (* const heapAllocation_Path) (char* path, GL_Shader *shader);
+	GL_Texture* (* const heapAllocation_Path) (char* path, GL_Shader *shader, unsigned int glActiveTextureEnum);
 } _TEXTURE_GL;
 
 extern _ENGINE_RUNTIME_GL const ENGINE_RUNTIME_GL;

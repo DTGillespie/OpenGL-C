@@ -17,29 +17,32 @@
 #include <engine.h>
 
 // Prototypes: ENGINE_RUNTIME_GL
-static GLFWwindow* gl_Initialize		   (int version_major, int version_minor);
-static void        gl_BufferRenderObject   (GL_RenderObject *renderObject);
-static void		   gl_BindShaderAttributes (GL_RenderObject* renderObject);
-static void		   gl_Render			   (RenderFuncPtr renderFuncPtr, GLFWwindow windowArg);
+static GLFWwindow* gl_Initialize						 (int version_major, int version_minor);
+static void        gl_BufferRenderObject				 (GL_RenderObject *renderObject);
+static void		   gl_BindShaderAttributes				 (GL_RenderObject* renderObject);
+static void		   gl_Render							 (RenderFuncPtr renderFuncPtr, GLFWwindow windowArg);
 
 // Prototypes: SHADER_GL
-static void		  gl_Shader_BufferSource_Path			(char *vertexPath, char *fragmentPath);
-static GL_Shader* gl_Shader_HeapAllocation_SourceBuffer (void);
+static void		   gl_Shader_BufferSource_Path			 (char *vertexPath, char *fragmentPath);
+static GL_Shader*  gl_Shader_HeapAllocation_SourceBuffer (void);
 
 // Prototypes: TEXTURE_GL
-static GL_Texture* gl_Texture_HeapAllocation_Path(char* path, GL_Shader *shader);
+static GL_Texture* gl_Texture_HeapAllocation_Path		 (char* path, GL_Shader *shader, unsigned int glActiveTextureEnum);
 
 // Prototypes: GL Internal
-void		gl_Framebuffer_Size_Callback (GLFWwindow* window, int width, int height);
-static void gl_Poll_Input				  (void);
+void			   gl_Framebuffer_Size_Callback			 (GLFWwindow* window, int width, int height);
+static void		   gl_Poll_Input						 (void);
 
 // Prototypes: GL Misc.
-static void gl_RenderProc_DrawArrays   (GL_Shader* shader);
-static void gl_RenderProc_DrawElements (GL_RenderObject *renderObject);
+static void		   gl_RenderProc_DrawArrays				 (GL_Shader* shader);
+static void		   gl_RenderProc_DrawElements			 (GL_RenderObject *renderObject);
 
 static ShaderSourceBuffer SHADER_SRC_BUFFER = { .buffered = 0, 0 };
 
 // Dev
+unsigned int textureID = 1;
+bool enable_wireframe = false;
+
 GL_Shader dev_Shader = { 0 };
 GLFWwindow* window;
 
@@ -136,7 +139,23 @@ static void gl_RenderProc_DrawArrays(GL_Shader *shader) {
 static void gl_RenderProc_DrawElements(GL_RenderObject *renderObject) {
 
 	// Wireframe rendering
-	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // GL_FILL 
+	if (enable_wireframe) {
+
+		glBindTexture(GL_TEXTURE_2D, renderObject->material.debug_Texture->texture_id);
+
+		glUseProgram(renderObject->material.shader->gls_program_id);
+
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+	}
+	else {
+
+		glBindTexture(GL_TEXTURE_2D, renderObject->material.texture->texture_id);
+
+		glUseProgram(renderObject->material.shader->gls_program_id);
+
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	}
 
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // Rendering EBO
 }
@@ -148,6 +167,9 @@ void gl_Framebuffer_Size_Callback(GLFWwindow* window, int width, int height) {
 static void gl_Poll_Input(void) {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, 1);
+
+	if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS)
+		enable_wireframe = !enable_wireframe;
 }
 
 static void gl_Shader_BufferSource_Path(char* vertexPath, char* fragmentPath) {
@@ -318,7 +340,7 @@ static GL_Shader* gl_Shader_HeapAllocation_SourceBuffer(void) {
 	return hShader_ptr;
 }
 
-static GL_Texture* gl_Texture_HeapAllocation_Path(char* path, GL_Shader *shader) {
+static GL_Texture* gl_Texture_HeapAllocation_Path(char* path, GL_Shader *shader, unsigned int glActiveTextureEnum) {
 
 	int width_buffer, height_buffer, nrChannels_buffer;
 	unsigned char *imageDataBuffer = stbi_load(
@@ -337,14 +359,37 @@ static GL_Texture* gl_Texture_HeapAllocation_Path(char* path, GL_Shader *shader)
 
 	GL_Texture textureBuffer = {
 		.image = imageBuffer,
-		.texture_id = -1,
+		.texture_id = ++textureID,
 	};
 
 	GL_Texture* hTexture_ptr = (GL_Texture*) malloc(sizeof(textureBuffer));
 
 	hTexture_ptr->image = imageBuffer;
 
-	glActiveTexture(GL_TEXTURE0);
+
+	switch (glActiveTextureEnum) {
+
+		case 0:  glActiveTexture(GL_TEXTURE0 ); break; case 1:  glActiveTexture(GL_TEXTURE1 ); break;
+		case 2:  glActiveTexture(GL_TEXTURE2 ); break; case 3:  glActiveTexture(GL_TEXTURE3 ); break;
+		case 4:  glActiveTexture(GL_TEXTURE4 ); break; case 5:  glActiveTexture(GL_TEXTURE5 ); break;
+		case 6:  glActiveTexture(GL_TEXTURE6 ); break; case 7:  glActiveTexture(GL_TEXTURE7 ); break;
+		case 8:  glActiveTexture(GL_TEXTURE8 ); break; case 9:  glActiveTexture(GL_TEXTURE9 ); break;
+		case 10: glActiveTexture(GL_TEXTURE10); break; case 11: glActiveTexture(GL_TEXTURE11); break;
+		case 12: glActiveTexture(GL_TEXTURE12); break; case 13: glActiveTexture(GL_TEXTURE13); break;
+		case 14: glActiveTexture(GL_TEXTURE14); break; case 15: glActiveTexture(GL_TEXTURE15); break;
+		case 16: glActiveTexture(GL_TEXTURE16); break; case 17: glActiveTexture(GL_TEXTURE17); break;
+		case 18: glActiveTexture(GL_TEXTURE18); break; case 19: glActiveTexture(GL_TEXTURE19); break;
+		case 20: glActiveTexture(GL_TEXTURE20); break; case 21: glActiveTexture(GL_TEXTURE21); break;
+		case 22: glActiveTexture(GL_TEXTURE22); break; case 23: glActiveTexture(GL_TEXTURE23); break;
+		case 24: glActiveTexture(GL_TEXTURE24); break; case 25: glActiveTexture(GL_TEXTURE25); break;
+		case 26: glActiveTexture(GL_TEXTURE26); break; case 27: glActiveTexture(GL_TEXTURE27); break;
+		case 28: glActiveTexture(GL_TEXTURE28); break; case 29: glActiveTexture(GL_TEXTURE29); break;
+		case 30: glActiveTexture(GL_TEXTURE30); break; case 31: glActiveTexture(GL_TEXTURE31); break;
+
+		default: printf("\nERROR::gl_Texture_HeapAllocation_Path::INVALID_glActiveTextureEnum\n");
+		break;
+	}
+
 	glBindTexture(GL_TEXTURE_2D, hTexture_ptr->texture_id);
 
 	if (hTexture_ptr->image.data) {
@@ -368,7 +413,7 @@ static GL_Texture* gl_Texture_HeapAllocation_Path(char* path, GL_Shader *shader)
 	}
 
 	unsigned int outTextureUniformPos = glGetUniformLocation(shader->gls_program_id, "outTexture");
-	glUniform1i(outTextureUniformPos, 0);
+	glUniform1i (outTextureUniformPos, 0);
 
 	// Texture wrapping
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);

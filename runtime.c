@@ -17,7 +17,8 @@ GLFWwindow *window;
 void dev_bufferShaderSource(void);
 void dev_Setup(void);
 
-char dev_TexturePath[PATH_STRING_SIZE];
+char debug_TexturePath [PATH_STRING_SIZE];
+char dev_TexturePath   [PATH_STRING_SIZE];
 
 int main() {
 
@@ -43,8 +44,10 @@ int main() {
 			 1, 2, 3,
 
 		.material = {
-			.shader	 = SHADER_GL.heapAllocation_SourceBuffer(),
-			.texture = TEXTURE_GL.heapAllocation_Path(dev_TexturePath, dev_Triangle.material.shader),
+			.shader		   = SHADER_GL.heapAllocation_SourceBuffer(),
+
+			.debug_Texture = TEXTURE_GL.heapAllocation_Path (debug_TexturePath, dev_Triangle.material.shader, 0),
+			.texture	   = TEXTURE_GL.heapAllocation_Path (dev_TexturePath,   dev_Triangle.material.shader, 1),
 
 			.shaderAttributes[0] = "aPos",
 			.shaderAttributes[1] = "aTexCoord",
@@ -67,7 +70,12 @@ void dev_Setup(void) {
 	// Shader
 	dev_bufferShaderSource();
 
-	// Texture path
+	// debug_TexturePath
+	char debug_TexturePath_Suffix[] = "\\resources\\textures\\debug_red.png";
+	strncat(debug_TexturePath, cwd, sizeof(cwd));
+	strncat(debug_TexturePath, debug_TexturePath_Suffix, sizeof(debug_TexturePath_Suffix));
+
+	// dev_TexturePath
 	char dev_TexturePath_Suffix[]  = "\\resources\\textures\\test.png";
 	strncat(dev_TexturePath, cwd, sizeof(cwd));
 	strncat(dev_TexturePath, dev_TexturePath_Suffix, sizeof(dev_TexturePath_Suffix));
@@ -76,8 +84,8 @@ void dev_Setup(void) {
 
 void dev_bufferShaderSource(void) {
 
-	char vertex_shaderPath[PATH_STRING_SIZE / 2];
-	char vertex_shaderPath_suffix[PATH_STRING_SIZE / 2];
+	char vertex_shaderPath		  [PATH_STRING_SIZE / 2];
+	char vertex_shaderPath_suffix [PATH_STRING_SIZE / 2];
 
 	strcpy(vertex_shaderPath_suffix, "\\glsl\\vertex_test_texture.glsl");
 	strcpy(vertex_shaderPath, cwd);
@@ -86,8 +94,8 @@ void dev_bufferShaderSource(void) {
 			   vertex_shaderPath_suffix, 
 		sizeof(vertex_shaderPath_suffix));
 
-	char fragment_shaderPath[PATH_STRING_SIZE / 2];
-	char fragment_shaderPath_suffix[PATH_STRING_SIZE / 2];
+	char fragment_shaderPath		[PATH_STRING_SIZE / 2];
+	char fragment_shaderPath_suffix [PATH_STRING_SIZE / 2];
 	
 	strcpy(fragment_shaderPath_suffix, "\\glsl\\fragment_test_texture.glsl");
 	strcpy(fragment_shaderPath, cwd);
